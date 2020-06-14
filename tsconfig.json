@@ -1,0 +1,24 @@
+{
+    "compilerOptions": {
+      "module": "CommonJS",
+      "target": "ES2019",
+      "declaration": true,
+      "esModuleInterop": true,
+      "outDir": "./dist",
+      "incremental": true,
+      "alwaysStrict": true,
+      "noFallthroughCasesInSwitch": true,
+      "noImplicitAny": true,
+      "noImplicitThis": true,
+      "noImplicitReturns": true,
+      "allowUnreachableCode": true,
+      "strictNullChecks": true,
+      "strictPropertyInitialization": true
+    },
+    "include": [
+      "src/**/*"
+    ],
+    "exclude": [
+      "src/**/*.spec.ts"
+    ]
+  }
