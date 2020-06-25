@@ -1,0 +1,16 @@
+{
+    "configurations": [
+      {
+        "name": "Start server",
+        "type": "node",
+        "request": "launch",
+        "runtimeArgs": ["--inspect", "--debug-port=9229"],
+        "program": "${workspaceFolder}/src/index.ts",
+        "preLaunchTask": "tsc: build - tsconfig.json",
+        "outFiles": ["${workspaceFolder}/dist/**/*.js"],
+        "port": 9229,
+        "console": "integratedTerminal"
+      }
+    ]
+  }
+  
