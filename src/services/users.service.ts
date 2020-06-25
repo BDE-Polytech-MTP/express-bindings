@@ -50,7 +50,7 @@ export class PostgresUsersService implements UsersService {
                     lastname: row.lastname,
                 };
             }
-            throw new UsersServiceError('No unregistered user with the given uuid found.', UsersErrorType.USER_NOT_EXISTS);
+            return Promise.reject(new UsersServiceError('No unregistered user with the given uuid found.', UsersErrorType.USER_NOT_EXISTS));
         } catch (_) {
             throw new UsersServiceError('Unable to fetch unregistered user with the given uuid.', UsersErrorType.INTERNAL);
         }
@@ -71,7 +71,7 @@ export class PostgresUsersService implements UsersService {
                     specialty: row.specialty,
                 };
             }
-            throw new UsersServiceError('No registered user with the given uuid found.', UsersErrorType.USER_NOT_EXISTS);
+            return Promise.reject(new UsersServiceError('No registered user with the given uuid found.', UsersErrorType.USER_NOT_EXISTS));
         } catch (_) {
             throw new UsersServiceError('Unable to fetch a registered user with the given uuid.', UsersErrorType.INTERNAL);
         }
@@ -92,7 +92,7 @@ export class PostgresUsersService implements UsersService {
                     specialty: row.specialty,
                 };
             }
-            throw new UsersServiceError('No registered user with the given email found.', UsersErrorType.USER_NOT_EXISTS);
+            return Promise.reject(new UsersServiceError('No registered user with the given email found.', UsersErrorType.USER_NOT_EXISTS));
         } catch (_) {
             throw new UsersServiceError('Unable to fetch a registered user with the given email.', UsersErrorType.INTERNAL);
         }
