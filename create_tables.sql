@@ -4,7 +4,7 @@ CREATE TABLE bde (
     specialties VARCHAR(6)[] NOT NULL,
 
     CONSTRAINT PK_Bde PRIMARY KEY (uuid),
-    CONSTRAINT Unique_name UNIQUE (name),
+    CONSTRAINT Unique_name UNIQUE (name)
 );
 
 CREATE TABLE users (

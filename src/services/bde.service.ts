@@ -3,7 +3,7 @@ import { Pool } from 'pg';
 
 export class PostgresBDEService implements BDEService {
 
-    constructor(private db: Pool) {};
+    constructor(private db: Pool) {}
     
     async create(bde: BDE): Promise<BDE> {
         try {
@@ -21,6 +21,32 @@ export class PostgresBDEService implements BDEService {
 
     delete(uuid: string): Promise<BDE> {
         throw new Error("Method not implemented.");
+    }
+
+    async listAll(): Promise<BDE[]> {
+        try {
+            let {rows} = await this.db.query('SELECT * FROM bde');
+            return rows;
+        } catch (e) {
+            throw new BDEServiceError('Unable to fetch all BDEs', BDEErrorType.INTERNAL);
+        }
+    }
+
+    async findByUUID(uuid: string): Promise<BDE> {
+        try {
+            const { rows } = await this.db.query('SELECT * FROM bde WHERE uuid=$1', [uuid]);
+            if (rows.length === 1) {
+                const row = rows[0];
+                return {
+                    name: row.name,
+                    uuid: row.uuid,
+                    specialties: row.specialties,
+                };
+            }
+            throw new BDEServiceError('No BDE with the given UUID exists.', BDEErrorType.BDE_NOT_EXISTS);
+        } catch (_) {
+            throw new BDEServiceError('Unable to fetch BDE.', BDEErrorType.INTERNAL);
+        }
     }
 
 }
