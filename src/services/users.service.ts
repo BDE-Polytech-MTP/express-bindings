@@ -28,10 +28,10 @@ export class PostgresUsersService implements UsersService {
     async finishRegistration(user: User): Promise<User> {
         await this.db.query(
             `UPDATE users 
-             SET firstname = $1, lastname = $2, password = $3, specialty = $4
-             WHERE uuid = $5
+                SET firstname = $1, lastname = $2, password = $3, specialty_name = $4, specialty_year = $5
+                WHERE uuid = $6
             `,
-            [user.firstname, user.lastname, user.password, user.specialty, user.uuid]
+            [user.firstname, user.lastname, user.password, user.specialtyName, user.specialtyYear, user.uuid]
         );
 
         return user;
@@ -68,7 +68,8 @@ export class PostgresUsersService implements UsersService {
                     firstname: row.fistname,
                     lastname: row.lastname,
                     password: row.password,
-                    specialty: row.specialty,
+                    specialtyName: row.specialty_name,
+                    specialtyYear: row.specialty_year,
                 };
             }
             return Promise.reject(new UsersServiceError('No registered user with the given uuid found.', UsersErrorType.USER_NOT_EXISTS));
@@ -89,7 +90,8 @@ export class PostgresUsersService implements UsersService {
                     firstname: row.fistname,
                     lastname: row.lastname,
                     password: row.password,
-                    specialty: row.specialty,
+                    specialtyName: row.specialty_name,
+                    specialtyYear: row.specialty_year,
                 };
             }
             return Promise.reject(new UsersServiceError('No registered user with the given email found.', UsersErrorType.USER_NOT_EXISTS));

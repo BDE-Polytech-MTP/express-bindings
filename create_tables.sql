@@ -1,10 +1,20 @@
 CREATE TABLE bde (
     uuid VARCHAR(36) NOT NULL,
     name VARCHAR(30) NOT NULL,
-    specialties VARCHAR(6)[] NOT NULL,
 
     CONSTRAINT PK_Bde PRIMARY KEY (uuid),
     CONSTRAINT Unique_name UNIQUE (name)
+);
+
+CREATE TABLE specialties (
+    name VARCHAR(6) NOT NULL,
+    bde_uuid VARCHAR(36) NOT NULL,
+    min_year INTEGER NOT NULL,
+    max_year INTEGER NOT NULL,
+
+    CONSTRAINT PK_Specialies PRIMARY KEY (name, bde_uuid),
+    CONSTRAINT FK_Specialties_Bde FOREIGN KEY (bde_uuid) REFERENCES bde(uuid),
+    CONSTRAINT min_lt_max CHECK (min_year <= max_year)
 );
 
 CREATE TABLE users (
@@ -14,11 +24,13 @@ CREATE TABLE users (
     lastname VARCHAR(15) DEFAULT NULL,
     password VARCHAR(255) DEFAULT NULL,
     bde_uuid VARCHAR(36) NOT NULL,
-    specialty VARCHAR(6) DEFAULT NULL,
+    specialty_name VARCHAR(6) DEFAULT NULL,
+    specialty_year INTEGER DEFAULT NULL,
 
     CONSTRAINT PK_Users PRIMARY KEY (uuid),
     CONSTRAINT FK_Users_Bde FOREIGN KEY (bde_uuid) REFERENCES bde(uuid),
-    CONSTRAINT UNIQUE_Users_email UNIQUE (email)
+    CONSTRAINT UNIQUE_Users_email UNIQUE (email),
+    CONSTRAINT FK_Users_Specialties FOREIGN KEY (specialty_name, bde_uuid) REFERENCES specialties(name, bde_uuid)
 );
 
 CREATE TABLE events (
