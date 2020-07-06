@@ -26,6 +26,7 @@ CREATE TABLE users (
     bde_uuid VARCHAR(36) NOT NULL,
     specialty_name VARCHAR(6) DEFAULT NULL,
     specialty_year INTEGER DEFAULT NULL,
+    permissions VARCHAR(50)[] NOT NULL,
 
     CONSTRAINT PK_Users PRIMARY KEY (uuid),
     CONSTRAINT FK_Users_Bde FOREIGN KEY (bde_uuid) REFERENCES bde(uuid),

@@ -1,4 +1,4 @@
-import { UsersService, User, UnregisteredUser, UsersServiceError, UsersErrorType } from 'generic-backend';
+import { UsersService, User, UnregisteredUser, UsersServiceError, UsersErrorType, permissionsFromStrings } from 'generic-backend';
 import { Pool } from 'pg';
 
 export class PostgresUsersService implements UsersService {
@@ -8,8 +8,8 @@ export class PostgresUsersService implements UsersService {
     async create(user: UnregisteredUser): Promise<UnregisteredUser> {
         try {
             await this.db.query(
-                'INSERT INTO users (uuid, email, bde_uuid, firstname, lastname) VALUES ($1, $2, $3, $4, $5)',
-                [user.uuid, user.email, user.bdeUUID, user.firstname, user.lastname]
+                'INSERT INTO users (uuid, email, bde_uuid, firstname, lastname, permissions) VALUES ($1, $2, $3, $4, $5, $6)',
+                [user.uuid, user.email, user.bdeUUID, user.firstname, user.lastname, user.permissions.map(p => p.name)]
             );
             return user;
         } catch (e) {
@@ -48,6 +48,7 @@ export class PostgresUsersService implements UsersService {
                     email: row.email,
                     firstname: row.firstname,
                     lastname: row.lastname,
+                    permissions: permissionsFromStrings(row.permissions),
                 };
             }
             return Promise.reject(new UsersServiceError('No unregistered user with the given uuid found.', UsersErrorType.USER_NOT_EXISTS));
@@ -70,6 +71,7 @@ export class PostgresUsersService implements UsersService {
                     password: row.password,
                     specialtyName: row.specialty_name,
                     specialtyYear: row.specialty_year,
+                    permissions: permissionsFromStrings(row.permissions),
                 };
             }
             return Promise.reject(new UsersServiceError('No registered user with the given uuid found.', UsersErrorType.USER_NOT_EXISTS));
@@ -92,6 +94,7 @@ export class PostgresUsersService implements UsersService {
                     password: row.password,
                     specialtyName: row.specialty_name,
                     specialtyYear: row.specialty_year,
+                    permissions: permissionsFromStrings(row.permissions),
                 };
             }
             return Promise.reject(new UsersServiceError('No registered user with the given email found.', UsersErrorType.USER_NOT_EXISTS));
