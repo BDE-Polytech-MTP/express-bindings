@@ -21,7 +21,7 @@ const main = async () => {
     const mailingService = new NodeMailerMailingService(transport);
     const bdeService = new PostgresBDEService(db);
     const usersService = new PostgresUsersService(db);
-    const bdeController = new BDEController(bdeService);
+    const bdeController = new BDEController(bdeService, mailingService);
     const authService = new AuthenticationService(usersService, DEFAULT_HASH_STRATEGY);
     const usersController = new UsersController(usersService, authService, mailingService);
     
@@ -34,7 +34,7 @@ const main = async () => {
     app.get('/bde', (_, res) => bdeController.listAll().then(forwardTo(res)));
     app.get('/bde/:uuid', (req, res) => bdeController.getBDE(req.params.uuid).then(forwardTo(res)));
 
-    app.post('/users/unregistered', (req, res) => usersController.create(req.body).then(forwardTo(res)));
+    app.post('/users/unregistered', (req, res) => usersController.create(req.body, req.headers.authorization).then(forwardTo(res)));
     app.get('/users/unregistered/:uuid', (req, res) => usersController.getUnregisteredUser(req.params.uuid).then(forwardTo(res)));
 
     app.post('/login', (req, res) => usersController.connectUser(req.body).then(forwardTo(res)));

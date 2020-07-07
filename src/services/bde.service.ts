@@ -1,4 +1,4 @@
-import { BDEService, BDE, BDEServiceError, BDEErrorType } from 'generic-backend';
+import { BDEService, BDE, BDEServiceError, BDEErrorType, UnregisteredUser } from 'generic-backend';
 import { Pool } from 'pg'; 
 import { transaction } from '../db-utils';
 
@@ -6,10 +6,12 @@ export class PostgresBDEService implements BDEService {
 
     constructor(private db: Pool) {}
     
-    async create(bde: BDE): Promise<BDE> {
+    async create(bde: BDE, owner: UnregisteredUser): Promise<BDE> {
         try {
             await transaction(this.db, async (client) => {
+                /* Create BDE */
                 await client.query('INSERT INTO bde (uuid, name) VALUES ($1, $2)', [bde.uuid, bde.name]);
+                /* Add specialties */
                 const promises = bde.specialties.map(
                     spe => client.query(
                         'INSERT INTO specialties (name, bde_uuid, min_year, max_year) VALUES ($1, $2, $3, $4)',
@@ -17,13 +19,22 @@ export class PostgresBDEService implements BDEService {
                     )
                 );
                 await Promise.all(promises);
-            })
+                /* Create owner account */
+                await client.query(
+                    'INSERT INTO users (uuid, email, bde_uuid, firstname, lastname, permissions) VALUES ($1, $2, $3, $4, $5, $6)',
+                    [owner.uuid, owner.email, owner.bdeUUID, owner.firstname, owner.lastname, owner.permissions.map(p => p.name)]
+                );
+            });
             return bde;
         } catch (e) {
             if (e.constraint === 'pk_bde') {
                 throw new BDEServiceError('A BDE with the given UUID already exists.', BDEErrorType.BDE_ALREADY_EXISTS);
             } else  if (e.constraint === 'unique_name') {
                 throw new BDEServiceError('A BDE with the given name already exists', BDEErrorType.BDE_ALREADY_EXISTS);
+            } else if (e.constraint === 'unique_users_email') {
+                throw new BDEServiceError('An user with the given email already exists.', BDEErrorType.USER_ALREADY_EXISTS);
+            } else if (e.constraint === 'pk_users') {
+                throw new BDEServiceError('An user with the given UUID already exists', BDEErrorType.USER_ALREADY_EXISTS);
             }
             throw new BDEServiceError('Unable to create a BDE.', BDEErrorType.INTERNAL);
         }
