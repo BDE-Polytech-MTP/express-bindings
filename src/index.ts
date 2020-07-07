@@ -6,6 +6,7 @@ import { BDEController, UsersController, AuthenticationService, DEFAULT_HASH_STR
 import { PostgresBDEService } from './services/bde.service';
 import { PostgresUsersService } from './services/users.service';
 import { NodeMailerMailingService } from './services/mailing.service';
+import * as nodemailer from 'nodemailer';
 
 const port = process.env.PORT || 3000;
 const app = express();
@@ -16,7 +17,24 @@ const db = new Pool({
 });
 
 const main = async () => {
-    const transport = await NodeMailerMailingService.createTestTransport();
+    let transport: nodemailer.Transporter; 
+    
+    if (process.env.MAIL_HOST && process.env.MAIL_USER && process.env.MAIL_PASSWORD) {
+        transport = nodemailer.createTransport({
+            host: process.env.MAIL_HOST,
+            secure: false,
+            ignoreTLS: true,
+            auth: {
+                user: process.env.MAIL_USER,
+                pass: process.env.MAIL_PASSWORD,
+            }
+        });
+    } else {
+        transport = await NodeMailerMailingService.createTestTransport();
+        console.log('Using testing mailing transporter.');
+    }
+
+    await transport.verify();
 
     const mailingService = new NodeMailerMailingService(transport);
     const bdeService = new PostgresBDEService(db);
@@ -49,4 +67,4 @@ const main = async () => {
     });
 }
 
-main();
+main().catch((e) => console.error(e));
