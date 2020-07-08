@@ -6,7 +6,8 @@
   "scripts": {
     "test": "mocha --reporter spec -r chai/register-expect --require ts-node/register 'src/**/*.spec.ts'",
     "build": "tsc",
-    "start": "ts-node src/index.ts"
+    "start": "ts-node src/index.ts",
+    "postinstall": "npm run build"
   },
   "author": "",
   "license": "Apache-2.0",
