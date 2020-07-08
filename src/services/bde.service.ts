@@ -36,7 +36,7 @@ export class PostgresBDEService implements BDEService {
             } else if (e.constraint === 'pk_users') {
                 throw new BDEServiceError('An user with the given UUID already exists', BDEErrorType.USER_ALREADY_EXISTS);
             }
-            throw new BDEServiceError('Unable to create a BDE.', BDEErrorType.INTERNAL);
+            throw new BDEServiceError(`Unable to create a BDE.\n${e}`, BDEErrorType.INTERNAL);
         }
     }
 
@@ -66,7 +66,7 @@ export class PostgresBDEService implements BDEService {
             });
             return Object.values(bdes);
         } catch (e) {
-            throw new BDEServiceError('Unable to fetch all BDEs', BDEErrorType.INTERNAL);
+            throw new BDEServiceError(`Unable to fetch all BDEs. ${e}`, BDEErrorType.INTERNAL);
         }
     }
 
@@ -87,8 +87,8 @@ export class PostgresBDEService implements BDEService {
                 return bde;
             }
             throw new BDEServiceError('No BDE with the given UUID exists.', BDEErrorType.BDE_NOT_EXISTS);
-        } catch (_) {
-            throw new BDEServiceError('Unable to fetch BDE.', BDEErrorType.INTERNAL);
+        } catch (e) {
+            throw new BDEServiceError(`Unable to fetch BDE. ${e}`, BDEErrorType.INTERNAL);
         }
     }
 
