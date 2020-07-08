@@ -7,6 +7,7 @@ import { PostgresBDEService } from './services/bde.service';
 import { PostgresUsersService } from './services/users.service';
 import { NodeMailerMailingService } from './services/mailing.service';
 import * as nodemailer from 'nodemailer';
+import { StdLoggingService } from './services/logging.service';
 
 const port = process.env.PORT || 3000;
 const app = express();
@@ -36,12 +37,13 @@ const main = async () => {
 
     await transport.verify();
 
+    const loggingService = new StdLoggingService();
     const mailingService = new NodeMailerMailingService(transport);
     const bdeService = new PostgresBDEService(db);
     const usersService = new PostgresUsersService(db);
-    const bdeController = new BDEController(bdeService, mailingService);
+    const bdeController = new BDEController(bdeService, mailingService, loggingService);
     const authService = new AuthenticationService(usersService, DEFAULT_HASH_STRATEGY);
-    const usersController = new UsersController(usersService, authService, mailingService);
+    const usersController = new UsersController(usersService, authService, mailingService, loggingService);
     
     app.use(bodyParser.json());
     app.use(cors());
