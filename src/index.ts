@@ -8,16 +8,28 @@ import { PostgresUsersService } from './services/users.service';
 import { NodeMailerMailingService } from './services/mailing.service';
 import * as nodemailer from 'nodemailer';
 import { StdLoggingService } from './services/logging.service';
+import marv from 'marv/api/promise';
+import marvPgDriver from 'marv-pg-driver';
+import path from 'path';
 
 const port = process.env.PORT || 3000;
-const app = express();
 const dbUrl = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/postgres';
-
-const db = new Pool({
-    connectionString: dbUrl,
-});
+const migrationsDirectory = path.resolve('migrations');
 
 const main = async () => {
+    /* Define pg connection information */
+    const pgCredentials = {
+        connectionString: dbUrl,
+    };
+
+    /* Apply migrations to database */
+    const migrations = await marv.scan(migrationsDirectory);
+    await marv.migrate(migrations, marvPgDriver({ connection: pgCredentials }));
+
+    /* Create connection pool to database */
+    const db = new Pool(pgCredentials);
+
+    /* Create transport for mailing service */
     let transport: nodemailer.Transporter; 
     
     if (process.env.MAIL_HOST && process.env.MAIL_USER && process.env.MAIL_PASSWORD) {
@@ -37,17 +49,25 @@ const main = async () => {
 
     await transport.verify();
 
+    /* Create services */
     const loggingService = new StdLoggingService();
     const mailingService = new NodeMailerMailingService(transport);
     const bdeService = new PostgresBDEService(db);
     const usersService = new PostgresUsersService(db);
+
+    /* Create controllers */
     const bdeController = new BDEController(bdeService, mailingService, loggingService);
     const authService = new AuthenticationService(usersService, DEFAULT_HASH_STRATEGY);
     const usersController = new UsersController(usersService, authService, mailingService, loggingService);
     
+    /* Create Express app, add middlewares and mount controllers */
+    const app = express();
+
+    // Middlewares
     app.use(bodyParser.json());
     app.use(cors());
     
+    // Mounting controllers
     const forwardTo = (res: ExpressResponse) => (response: Response) => res.status(response.code).json(response.body);
     
     app.post('/bde', (req, res) => bdeController.create(req.body).then(forwardTo(res)));
@@ -60,10 +80,12 @@ const main = async () => {
     app.post('/login', (req, res) => usersController.connectUser(req.body).then(forwardTo(res)));
     app.post('/register', (req, res) => usersController.finishUserRegistration(req.body).then(forwardTo(res)));
     
+    /* Start application */
     app.listen(port, () => {
         console.log(`Server listening on port ${port}.`);
     });
 
+    /* Add callback to disconnect database pool on process exit */
     process.on('beforeExit', async () => {
         await db.end();
     });
