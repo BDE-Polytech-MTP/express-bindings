@@ -20,7 +20,7 @@ export class PostgresUsersService implements UsersService {
             } else if (e.constraint === 'fk_users_bde') {
                 throw new UsersServiceError('The given bde uuid does not exists', UsersErrorType.BDE_NOT_EXISTS);
             } else {
-                throw new UsersServiceError('Unable to create the user.', UsersErrorType.INTERNAL);
+                throw new UsersServiceError(`Unable to create the user.\n${e}`, UsersErrorType.INTERNAL);
             }
         }
     }
@@ -52,8 +52,8 @@ export class PostgresUsersService implements UsersService {
                 };
             }
             return Promise.reject(new UsersServiceError('No unregistered user with the given uuid found.', UsersErrorType.USER_NOT_EXISTS));
-        } catch (_) {
-            throw new UsersServiceError('Unable to fetch unregistered user with the given uuid.', UsersErrorType.INTERNAL);
+        } catch (e) {
+            throw new UsersServiceError(`Unable to fetch unregistered user with the given uuid.\n${e}`, UsersErrorType.INTERNAL);
         }
     }
 
@@ -75,8 +75,8 @@ export class PostgresUsersService implements UsersService {
                 };
             }
             return Promise.reject(new UsersServiceError('No registered user with the given uuid found.', UsersErrorType.USER_NOT_EXISTS));
-        } catch (_) {
-            throw new UsersServiceError('Unable to fetch a registered user with the given uuid.', UsersErrorType.INTERNAL);
+        } catch (e) {
+            throw new UsersServiceError(`Unable to fetch a registered user with the given uuid.\n${e}`, UsersErrorType.INTERNAL);
         }
     }
 
@@ -98,8 +98,8 @@ export class PostgresUsersService implements UsersService {
                 };
             }
             return Promise.reject(new UsersServiceError('No registered user with the given email found.', UsersErrorType.USER_NOT_EXISTS));
-        } catch (_) {
-            throw new UsersServiceError('Unable to fetch a registered user with the given email.', UsersErrorType.INTERNAL);
+        } catch (e) {
+            throw new UsersServiceError(`Unable to fetch a registered user with the given email.\n${e}`, UsersErrorType.INTERNAL);
         }
     }
 
