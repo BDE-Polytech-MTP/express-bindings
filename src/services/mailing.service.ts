@@ -18,12 +18,13 @@ export class NodeMailerMailingService implements MailingService {
     constructor(private transporter: nodemailer.Transporter) {}
 
     async sendRegistrationMail(user: UnregisteredUser): Promise<void> {
+        const frontURL = process.env.FRONT_URL || 'http://localhost:4200';
         const info = await this.transporter.sendMail({
             from: `"BDE Polytech" <${process.env.MAIL_USER || 'noreply@bde-polytech.fr'}>`,
             to: user.email,
             subject: 'Inscription sur le site web du BDE',
-            text: `Inscrivez-vous sur le site du BDE à l'url suivante : http://localhost:4200/account/confirm?uuid=${user.uuid}`,
-            html: `Inscrivez vous site le site du BDE <a href="http://localhost:4200/account/confirm?uuid=${user.uuid}">ici</a>`
+            text: `Inscrivez-vous sur le site du BDE à l'url suivante : ${frontURL}/account/confirm?uuid=${user.uuid}`,
+            html: `Inscrivez vous site le site du BDE <a href="${frontURL}/account/confirm?uuid=${user.uuid}">ici</a>`
         });
 
         const previewURL = nodemailer.getTestMessageUrl(info);
