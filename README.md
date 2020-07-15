@@ -1,6 +1,6 @@
 # Express-bindings
 
-This projects aims to provide an implementation of [generic-backend](https://github.com/BDE-Polytech-MTP/generic-backend) project that works on a dedicated
+This projects aims to provide an implementation of [base-backend](https://github.com/BDE-Polytech-MTP/base-backend) project that works on a dedicated
 server. This implementation is powered with the following node packages :
 
 * [Express](https://www.npmjs.com/package/express) : to handle routing and request parsing
