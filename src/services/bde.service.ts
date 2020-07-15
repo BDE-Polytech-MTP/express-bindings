@@ -1,4 +1,4 @@
-import { BDEService, BDE, BDEServiceError, BDEErrorType, UnregisteredUser } from 'generic-backend';
+import { BDEService, BDE, BDEServiceError, BDEErrorType, UnregisteredUser } from '@bde-polytech-mtp/base-backend';
 import { Pool } from 'pg'; 
 import { transaction } from '../db-utils';
 

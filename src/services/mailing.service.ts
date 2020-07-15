@@ -1,4 +1,4 @@
-import { MailingService, UnregisteredUser } from 'generic-backend';
+import { MailingService, UnregisteredUser } from '@bde-polytech-mtp/base-backend';
 import * as nodemailer from 'nodemailer';
 import fs from 'fs';
 import path from 'path';

@@ -1,4 +1,4 @@
-import { UsersService, User, UnregisteredUser, UsersServiceError, UsersErrorType, permissionsFromStrings } from 'generic-backend';
+import { UsersService, User, UnregisteredUser, UsersServiceError, UsersErrorType, permissionsFromStrings } from '@bde-polytech-mtp/base-backend';
 import { Pool } from 'pg';
 
 export class PostgresUsersService implements UsersService {

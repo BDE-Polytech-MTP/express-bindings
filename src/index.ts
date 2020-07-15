@@ -2,7 +2,7 @@ import express, { Response as ExpressResponse } from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import { Pool } from 'pg';
-import { BDEController, UsersController, AuthenticationService, DEFAULT_HASH_STRATEGY, Response } from 'generic-backend';
+import { BDEController, UsersController, AuthenticationService, DEFAULT_HASH_STRATEGY, Response } from '@bde-polytech-mtp/base-backend';
 import { PostgresBDEService } from './services/bde.service';
 import { PostgresUsersService } from './services/users.service';
 import { NodeMailerMailingService } from './services/mailing.service';

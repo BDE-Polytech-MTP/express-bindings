@@ -1,4 +1,4 @@
-import { LoggingService } from 'generic-backend';
+import { LoggingService } from '@bde-polytech-mtp/base-backend';
 
 export class StdLoggingService implements LoggingService {
 
