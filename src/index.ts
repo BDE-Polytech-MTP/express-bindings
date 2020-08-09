@@ -2,10 +2,11 @@ import express, { Response as ExpressResponse } from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import { Pool } from 'pg';
-import { BDEController, UsersController, AuthenticationService, DEFAULT_HASH_STRATEGY, Response } from '@bde-polytech-mtp/base-backend';
+import { BDEController, UsersController, AuthenticationService, DEFAULT_HASH_STRATEGY, Response, EventsController } from '@bde-polytech-mtp/base-backend';
 import { PostgresBDEService } from './services/bde.service';
 import { PostgresUsersService } from './services/users.service';
 import { NodeMailerMailingService } from './services/mailing.service';
+import { PostgresEventsService } from './services/events.service';
 import * as nodemailer from 'nodemailer';
 import { StdLoggingService } from './services/logging.service';
 import marv from 'marv/api/promise';
@@ -54,11 +55,13 @@ const main = async () => {
     const mailingService = new NodeMailerMailingService(transport);
     const bdeService = new PostgresBDEService(db);
     const usersService = new PostgresUsersService(db);
+    const eventsService = new PostgresEventsService(db);
 
     /* Create controllers */
     const bdeController = new BDEController(bdeService, mailingService, loggingService);
     const authService = new AuthenticationService(usersService, DEFAULT_HASH_STRATEGY);
     const usersController = new UsersController(usersService, authService, mailingService, loggingService);
+    const eventsController = new EventsController(eventsService, authService);
     
     /* Create Express app, add middlewares and mount controllers */
     const app = express();
@@ -76,6 +79,9 @@ const main = async () => {
 
     app.post('/users/unregistered', (req, res) => usersController.create(req.body, req.headers.authorization).then(forwardTo(res)));
     app.get('/users/unregistered/:uuid', (req, res) => usersController.getUnregisteredUser(req.params.uuid).then(forwardTo(res)));
+
+    app.post('/events', (req, res) => eventsController.create(req.body, req.headers.authorization).then(forwardTo(res)));
+    app.get('/events/:eventUUID', (req, res) => eventsController.findOne(req.params.eventUUID, req.headers.authorization).then(forwardTo(res)));
 
     app.post('/login', (req, res) => usersController.connectUser(req.body).then(forwardTo(res)));
     app.post('/register', (req, res) => usersController.finishUserRegistration(req.body).then(forwardTo(res)));
