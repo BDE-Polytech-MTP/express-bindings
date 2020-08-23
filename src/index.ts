@@ -2,7 +2,15 @@ import express, { Response as ExpressResponse } from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import { Pool } from 'pg';
-import { BDEController, UsersController, AuthenticationService, DEFAULT_HASH_STRATEGY, Response, EventsController } from '@bde-polytech-mtp/base-backend';
+import { 
+    BDEController, 
+    UsersController, 
+    EventsController,
+    BookingsController,
+    AuthenticationService, 
+    DEFAULT_HASH_STRATEGY, 
+    Response
+} from '@bde-polytech-mtp/base-backend';
 import { PostgresBDEService } from './services/bde.service';
 import { PostgresUsersService } from './services/users.service';
 import { NodeMailerMailingService } from './services/mailing.service';
@@ -12,6 +20,7 @@ import { StdLoggingService } from './services/logging.service';
 import marv from 'marv/api/promise';
 import marvPgDriver from 'marv-pg-driver';
 import path from 'path';
+import { PostgresBookingsService } from './services/bookings.service';
 
 const port = process.env.PORT || 3000;
 const dbUrl = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/postgres';
@@ -56,12 +65,14 @@ const main = async () => {
     const bdeService = new PostgresBDEService(db);
     const usersService = new PostgresUsersService(db);
     const eventsService = new PostgresEventsService(db);
+    const bookingsService = new PostgresBookingsService(db);
+    const authService = new AuthenticationService(usersService, DEFAULT_HASH_STRATEGY);
 
     /* Create controllers */
     const bdeController = new BDEController(bdeService, mailingService, loggingService);
-    const authService = new AuthenticationService(usersService, DEFAULT_HASH_STRATEGY);
     const usersController = new UsersController(usersService, authService, mailingService, loggingService);
     const eventsController = new EventsController(eventsService, authService, loggingService);
+    const bookingsController = new BookingsController(bookingsService, eventsService, authService, loggingService);
     
     /* Create Express app, add middlewares and mount controllers */
     const app = express();
@@ -79,9 +90,23 @@ const main = async () => {
 
     app.post('/users/unregistered', (req, res) => usersController.create(req.body, req.headers.authorization).then(forwardTo(res)));
     app.get('/users/unregistered/:uuid', (req, res) => usersController.getUnregisteredUser(req.params.uuid).then(forwardTo(res)));
+    app.get('/users/registered/:uuid/bookings', (req, res) => bookingsController.findUserBookings(req.params.uuid, req.headers.authorization).then(forwardTo(res)));
+    app.get('/users/registered/:userUUID/bookings/:eventUUID',
+        (req, res) => bookingsController.findOne(req.params.eventUUID, req.params.userUUID, req.headers.authorization).then(forwardTo(res))
+    );
+    app.post('/users/registered/:userUUID/bookings/:eventUUID',
+        (req, res) => bookingsController.create(req.params.eventUUID, req.params.userUUID, req.body, req.headers.authorization).then(forwardTo(res))
+    );
 
     app.post('/events', (req, res) => eventsController.create(req.body, req.headers.authorization).then(forwardTo(res)));
     app.get('/events/:eventUUID', (req, res) => eventsController.findOne(req.params.eventUUID, req.headers.authorization).then(forwardTo(res)));
+    app.get('/events/:eventUUID/bookings', (req, res) => bookingsController.findEventBookings(req.params.eventUUID, req.headers.authorization).then(forwardTo(res)));
+    app.get('/events/:eventUUID/bookings/:userUUID',
+        (req, res) => bookingsController.findOne(req.params.eventUUID, req.params.userUUID, req.headers.authorization).then(forwardTo(res))
+    );
+    app.post('/events/:eventUUID/bookings/:userUUID',
+        (req, res) => bookingsController.create(req.params.eventUUID, req.params.userUUID, req.body, req.headers.authorization).then(forwardTo(res))
+    );
 
     app.post('/login', (req, res) => usersController.connectUser(req.body).then(forwardTo(res)));
     app.post('/register', (req, res) => usersController.finishUserRegistration(req.body).then(forwardTo(res)));
