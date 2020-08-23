@@ -1,0 +1,1 @@
+ALTER TABLE booking RENAME TO bookings;
