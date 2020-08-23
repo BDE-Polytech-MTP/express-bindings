@@ -61,7 +61,7 @@ const main = async () => {
     const bdeController = new BDEController(bdeService, mailingService, loggingService);
     const authService = new AuthenticationService(usersService, DEFAULT_HASH_STRATEGY);
     const usersController = new UsersController(usersService, authService, mailingService, loggingService);
-    const eventsController = new EventsController(eventsService, authService);
+    const eventsController = new EventsController(eventsService, authService, loggingService);
     
     /* Create Express app, add middlewares and mount controllers */
     const app = express();

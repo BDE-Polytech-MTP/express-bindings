@@ -29,8 +29,8 @@ export class NodeMailerMailingService implements MailingService {
             from: `"BDE Polytech" <${process.env.MAIL_USER || 'noreply@bde-polytech.fr'}>`,
             to: user.email,
             subject: 'Inscription sur le site web du BDE',
-            text: `Inscrivez-vous sur le site du BDE à l'url suivante : ${frontURL}/account/confirm?uuid=${user.uuid}`,
-            html: mailBody.replace(/{{frontURL}}/g, frontURL).replace(/{{registerURL}}/g, `${frontURL}/account/confirm?uuid=${user.uuid}`),
+            text: `Inscrivez-vous sur le site du BDE à l'url suivante : ${frontURL}/account/confirm?uuid=${user.userUUID}`,
+            html: mailBody.replace(/{{frontURL}}/g, frontURL).replace(/{{registerURL}}/g, `${frontURL}/account/confirm?uuid=${user.userUUID}`),
         });
 
         const previewURL = nodemailer.getTestMessageUrl(info);
