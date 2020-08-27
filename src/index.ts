@@ -98,6 +98,7 @@ const main = async () => {
         (req, res) => bookingsController.create(req.params.eventUUID, req.params.userUUID, req.body, req.headers.authorization).then(forwardTo(res))
     );
 
+    app.get('/events', (req, res) => eventsController.findAll(req.headers.authorization).then(forwardTo(res)));
     app.post('/events', (req, res) => eventsController.create(req.body, req.headers.authorization).then(forwardTo(res)));
     app.get('/events/:eventUUID', (req, res) => eventsController.findOne(req.params.eventUUID, req.headers.authorization).then(forwardTo(res)));
     app.get('/events/:eventUUID/bookings', (req, res) => bookingsController.findEventBookings(req.params.eventUUID, req.headers.authorization).then(forwardTo(res)));
