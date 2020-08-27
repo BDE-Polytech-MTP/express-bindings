@@ -5,9 +5,9 @@ import { DateTime } from 'luxon';
 interface EventRow {
     event_uuid: string;
     event_name: string;
-    booking_start: string | null;
-    booking_end: string | null;
-    event_date: string | null;
+    booking_start: Date | null;
+    booking_end: Date | null;
+    event_date: Date | null;
     bde_uuid: string;
     is_draft: boolean;
 }
@@ -22,16 +22,16 @@ export class PostgresEventsService implements EventsService {
             isDraft: row.is_draft,
             eventName: row.event_name,
             eventUUID: row.event_uuid,
-            bookingStart: row.booking_start ? DateTime.fromISO(row.booking_start) : undefined,
-            bookingEnd: row.booking_end ? DateTime.fromISO(row.booking_end) : undefined,
-            eventDate: row.event_date ? DateTime.fromISO(row.event_date) : undefined,
+            bookingStart: row.booking_start ? DateTime.fromJSDate(row.booking_start) : undefined,
+            bookingEnd: row.booking_end ? DateTime.fromJSDate(row.booking_end) : undefined,
+            eventDate: row.event_date ? DateTime.fromJSDate(row.event_date) : undefined,
         };
     }
 
     async create(event: Event): Promise<Event> {
         try {
             await this.db.query(
-                'INSERT INTO events (event_uuid, event_name, booking_start, booking_end, event_state, bde_uuid, is_draft) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+                'INSERT INTO events (event_uuid, event_name, booking_start, booking_end, event_date, bde_uuid, is_draft) VALUES ($1, $2, $3, $4, $5, $6, $7)',
                 [
                     event.eventUUID,
                     event.eventName,
