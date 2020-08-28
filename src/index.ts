@@ -46,9 +46,9 @@ const main = async () => {
         transport = nodemailer.createTransport({
             host: process.env.MAIL_HOST,
             secure: false,
-            ignoreTLS: true,
+            ignoreTLS: process.env.MAIL_DISABLE_TLS ? true : false,
             auth: {
-                user: process.env.MAIL_USER,
+                user: process.env.MAIL_CRED_USER || process.env.MAIL_USER,
                 pass: process.env.MAIL_PASSWORD,
             }
         });
