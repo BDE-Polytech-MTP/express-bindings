@@ -87,6 +87,7 @@ const main = async () => {
     app.post('/bde', (req, res) => bdeController.create(req.body).then(forwardTo(res)));
     app.get('/bde', (_, res) => bdeController.listAll().then(forwardTo(res)));
     app.get('/bde/:uuid', (req, res) => bdeController.getBDE(req.params.uuid).then(forwardTo(res)));
+    app.get('/bde/:uuid/users', (req, res) => usersController.listUsersForBDE(req.params.uuid, req.headers.authorization).then(forwardTo(res)));
 
     app.post('/users/unregistered', (req, res) => usersController.create(req.body, req.headers.authorization).then(forwardTo(res)));
     app.get('/users/unregistered/:uuid', (req, res) => usersController.getUnregisteredUser(req.params.uuid).then(forwardTo(res)));

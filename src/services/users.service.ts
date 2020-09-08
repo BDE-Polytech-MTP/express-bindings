@@ -11,6 +11,7 @@ interface UserRow {
     specialty_name: string | null;
     specialty_year: number | null;
     permissions: string[];
+    member: boolean;
 }
 
 export class PostgresUsersService implements UsersService {
@@ -25,6 +26,7 @@ export class PostgresUsersService implements UsersService {
             userUUID: row.user_uuid,
             firstname: row.firstname ? row.firstname : undefined,
             lastname: row.lastname ? row.lastname : undefined,
+            member: row.member,
         };
     }
 
@@ -39,14 +41,22 @@ export class PostgresUsersService implements UsersService {
             password: row.password!,
             specialtyName: row.specialty_name!,
             specialtyYear: row.specialty_year!,
+            member: row.member,
         };
+    }
+
+    private mapUserRowToUser(row: UserRow): User | UnregisteredUser {
+        if (row.password) {
+            return this.mapUserRowToRegisteredUser(row);
+        }
+        return this.mapUserRowToUnregisteredUser(row);
     }
 
     async create(user: UnregisteredUser): Promise<UnregisteredUser> {
         try {
             await this.db.query(
-                'INSERT INTO users (user_uuid, email, bde_uuid, firstname, lastname, permissions) VALUES ($1, $2, $3, $4, $5, $6)',
-                [user.userUUID, user.email, user.bdeUUID, user.firstname, user.lastname, user.permissions.map(p => p.name)]
+                'INSERT INTO users (user_uuid, email, bde_uuid, firstname, lastname, permissions, member) VALUES ($1, $2, $3, $4, $5, $6)',
+                [user.userUUID, user.email, user.bdeUUID, user.firstname, user.lastname, user.permissions.map(p => p.name), user.member]
             );
             return user;
         } catch (e) {
@@ -112,6 +122,30 @@ export class PostgresUsersService implements UsersService {
         } catch (e) {
             throw new UsersServiceError(`Unable to fetch a registered user with the given email.\n${e}`, UsersErrorType.INTERNAL);
         }
+    }
+
+    async findAll(bdeUUID?: string | undefined): Promise<(User | UnregisteredUser)[]> {
+        let rows: UserRow[];
+
+        if (bdeUUID) {
+            try {
+                rows = (await this.db.query('SELECT * FROM users')).rows;
+            } catch (e) {
+                throw new UsersServiceError(`Unable to fetch all users.\n${e}`, UsersErrorType.INTERNAL);
+            }
+        } else {
+            try {
+                rows = (await this.db.query('SELECT * FROM users WHERE bde_uuid = $1', [bdeUUID])).rows;
+            } catch (e) {
+                throw new UsersServiceError(`Unable to fetch all users.\n${e}`, UsersErrorType.INTERNAL);
+            }
+
+            if (rows.length === 0) {
+                throw new UsersServiceError(`BDE ${bdeUUID} does no exist.`, UsersErrorType.BDE_NOT_EXISTS);
+            }
+        }
+
+        return rows.map(this.mapUserRowToUser.bind(this));
     }
 
     delete(uuid: string): Promise<void> {
