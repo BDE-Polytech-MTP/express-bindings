@@ -1,4 +1,4 @@
-import express, { Response as ExpressResponse } from 'express';
+import express, { Response as ExpressResponse, Router } from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import { Pool } from 'pg';
@@ -25,6 +25,51 @@ import { PostgresBookingsService } from './services/bookings.service';
 const port = process.env.PORT || 3000;
 const dbUrl = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/postgres';
 const migrationsDirectory = path.resolve('migrations');
+
+const forwardTo = (res: ExpressResponse) => (response: Response) => res.status(response.code).json(response.body);
+
+const createBDERouter = (bdeController: BDEController, usersController: UsersController) => {
+    const bdeRouter = Router();
+    bdeRouter.route('/')
+                .get((_, res) => bdeController.listAll().then(forwardTo(res)))
+                .post((req, res) => bdeController.create(req.body).then(forwardTo(res)));
+    bdeRouter.get('/:uuid', (req, res) => bdeController.getBDE(req.params.uuid).then(forwardTo(res)));
+    bdeRouter.get('/:uuid/users', (req, res) => usersController.listUsersForBDE(req.params.uuid, req.headers.authorization).then(forwardTo(res)));
+
+    return bdeRouter;
+};
+
+const createUsersRouter = (usersController: UsersController, bookingsController: BookingsController) => {
+    const usersRouter = Router();
+    usersRouter.post('/unregistered', (req, res) => usersController.create(req.body, req.headers.authorization).then(forwardTo(res)));
+    usersRouter.get('/unregistered/:uuid', (req, res) => usersController.getUnregisteredUser(req.params.uuid).then(forwardTo(res)))
+    usersRouter.get('/registered/:uuid/bookings', (req, res) => bookingsController.findUserBookings(req.params.uuid, req.headers.authorization).then(forwardTo(res)));
+    usersRouter.get('/registered/:userUUID/bookings/:eventUUID',
+        (req, res) => bookingsController.findOne(req.params.eventUUID, req.params.userUUID, req.headers.authorization).then(forwardTo(res))
+    );
+    usersRouter.post('/registered/:userUUID/bookings/:eventUUID',
+        (req, res) => bookingsController.create(req.params.eventUUID, req.params.userUUID, req.body, req.headers.authorization).then(forwardTo(res))
+    );
+
+    return usersRouter;
+};
+
+const createEventsRouter = (eventsController: EventsController, bookingsController: BookingsController) => {
+    const eventsRouter = Router();
+    eventsRouter.route('/')
+                    .get((req, res) => eventsController.findAll(req.headers.authorization).then(forwardTo(res)))
+                    .post((req, res) => eventsController.create(req.body, req.headers.authorization).then(forwardTo(res)));
+    eventsRouter.get('/:eventUUID', (req, res) => eventsController.findOne(req.params.eventUUID, req.headers.authorization).then(forwardTo(res)));
+    eventsRouter.get('/:eventUUID/bookings', (req, res) => bookingsController.findEventBookings(req.params.eventUUID, req.headers.authorization).then(forwardTo(res)));
+    eventsRouter.get('/:eventUUID/bookings/:userUUID',
+        (req, res) => bookingsController.findOne(req.params.eventUUID, req.params.userUUID, req.headers.authorization).then(forwardTo(res))
+    );
+    eventsRouter.post('/:eventUUID/bookings/:userUUID',
+        (req, res) => bookingsController.create(req.params.eventUUID, req.params.userUUID, req.body, req.headers.authorization).then(forwardTo(res))
+    );
+    
+    return eventsRouter;
+}
 
 const main = async () => {
     /* Define pg connection information */
@@ -82,34 +127,9 @@ const main = async () => {
     app.use(cors());
     
     // Mounting controllers
-    const forwardTo = (res: ExpressResponse) => (response: Response) => res.status(response.code).json(response.body);
-    
-    app.post('/bde', (req, res) => bdeController.create(req.body).then(forwardTo(res)));
-    app.get('/bde', (_, res) => bdeController.listAll().then(forwardTo(res)));
-    app.get('/bde/:uuid', (req, res) => bdeController.getBDE(req.params.uuid).then(forwardTo(res)));
-    app.get('/bde/:uuid/users', (req, res) => usersController.listUsersForBDE(req.params.uuid, req.headers.authorization).then(forwardTo(res)));
-
-    app.post('/users/unregistered', (req, res) => usersController.create(req.body, req.headers.authorization).then(forwardTo(res)));
-    app.get('/users/unregistered/:uuid', (req, res) => usersController.getUnregisteredUser(req.params.uuid).then(forwardTo(res)));
-    app.get('/users/registered/:uuid/bookings', (req, res) => bookingsController.findUserBookings(req.params.uuid, req.headers.authorization).then(forwardTo(res)));
-    app.get('/users/registered/:userUUID/bookings/:eventUUID',
-        (req, res) => bookingsController.findOne(req.params.eventUUID, req.params.userUUID, req.headers.authorization).then(forwardTo(res))
-    );
-    app.post('/users/registered/:userUUID/bookings/:eventUUID',
-        (req, res) => bookingsController.create(req.params.eventUUID, req.params.userUUID, req.body, req.headers.authorization).then(forwardTo(res))
-    );
-
-    app.get('/events', (req, res) => eventsController.findAll(req.headers.authorization).then(forwardTo(res)));
-    app.post('/events', (req, res) => eventsController.create(req.body, req.headers.authorization).then(forwardTo(res)));
-    app.get('/events/:eventUUID', (req, res) => eventsController.findOne(req.params.eventUUID, req.headers.authorization).then(forwardTo(res)));
-    app.get('/events/:eventUUID/bookings', (req, res) => bookingsController.findEventBookings(req.params.eventUUID, req.headers.authorization).then(forwardTo(res)));
-    app.get('/events/:eventUUID/bookings/:userUUID',
-        (req, res) => bookingsController.findOne(req.params.eventUUID, req.params.userUUID, req.headers.authorization).then(forwardTo(res))
-    );
-    app.post('/events/:eventUUID/bookings/:userUUID',
-        (req, res) => bookingsController.create(req.params.eventUUID, req.params.userUUID, req.body, req.headers.authorization).then(forwardTo(res))
-    );
-
+    app.use('/bde', createBDERouter(bdeController, usersController));
+    app.use('/users', createUsersRouter(usersController, bookingsController));
+    app.use('/events', createEventsRouter(eventsController, bookingsController));
     app.post('/login', (req, res) => usersController.connectUser(req.body).then(forwardTo(res)));
     app.post('/register', (req, res) => usersController.finishUserRegistration(req.body).then(forwardTo(res)));
     
