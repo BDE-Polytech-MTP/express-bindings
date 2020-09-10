@@ -98,12 +98,12 @@ export class PostgresUsersService implements UsersService {
         }
     }
 
-    async findByUUID(uuid: string): Promise<User> {
+    async findByUUID(uuid: string): Promise<User | UnregisteredUser> {
         try {
-            const { rows }: { rows: UserRow[] } = await this.db.query('SELECT * FROM registered_users WHERE user_uuid = $1', [uuid]);
+            const { rows }: { rows: UserRow[] } = await this.db.query('SELECT * FROM users WHERE user_uuid = $1', [uuid]);
             if (rows.length === 1) {
                 let row = rows[0];
-                return this.mapUserRowToRegisteredUser(row);
+                return this.mapUserRowToUser(row);
             }
             return Promise.reject(new UsersServiceError('No registered user with the given uuid found.', UsersErrorType.USER_NOT_EXISTS));
         } catch (e) {

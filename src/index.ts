@@ -50,6 +50,7 @@ const createUsersRouter = (usersController: UsersController, bookingsController:
     usersRouter.post('/registered/:userUUID/bookings/:eventUUID',
         (req, res) => bookingsController.create(req.params.eventUUID, req.params.userUUID, req.body, req.headers.authorization).then(forwardTo(res))
     );
+    usersRouter.get('/:uuid', (req, res) => usersController.getUser(req.params.uuid, req.headers.authorization).then(forwardTo(res)));
 
     return usersRouter;
 };
