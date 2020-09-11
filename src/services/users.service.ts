@@ -55,7 +55,7 @@ export class PostgresUsersService implements UsersService {
     async create(user: UnregisteredUser): Promise<UnregisteredUser> {
         try {
             await this.db.query(
-                'INSERT INTO users (user_uuid, email, bde_uuid, firstname, lastname, permissions, member) VALUES ($1, $2, $3, $4, $5, $6)',
+                'INSERT INTO users (user_uuid, email, bde_uuid, firstname, lastname, permissions, member) VALUES ($1, $2, $3, $4, $5, $6, $7)',
                 [user.userUUID, user.email, user.bdeUUID, user.firstname, user.lastname, user.permissions.map(p => p.name), user.member]
             );
             return user;
