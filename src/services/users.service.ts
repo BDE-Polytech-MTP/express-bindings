@@ -1,4 +1,5 @@
 import { UsersService, User, UnregisteredUser, UsersServiceError, UsersErrorType, permissionsFromStrings } from '@bde-polytech-mtp/base-backend';
+import { UserRequest } from '@bde-polytech-mtp/base-backend/dist/models/user-request.model';
 import { Pool } from 'pg';
 
 interface UserRow {
@@ -50,6 +51,32 @@ export class PostgresUsersService implements UsersService {
             return this.mapUserRowToRegisteredUser(row);
         }
         return this.mapUserRowToUnregisteredUser(row);
+    }
+
+    async register(user: UserRequest): Promise<UserRequest> {
+        try {
+            const result = await this.db.query('SELECT COUNT(*) FROM users WHERE email=$1', [user.email]);
+            if (result) {
+                console.log(result);
+                return user;
+            }
+            await this.db.query(
+                'INSERT INTO user_requests (email, firstname, lastname, bde_uuid, specialty_name, specialty_year) VALUES ($1, $2 $3, $4, $5, $6)',
+                [user.email, user.firstname, user.lastname, user.bdeUUID, user.specialtyName, user.specialtyYear]
+            );
+            return user;
+        } catch (e) {
+            switch (e.constraint) {
+                case 'pk_userrequests':
+                    throw new UsersServiceError('The given user already exists', UsersErrorType.USER_ALREADY_EXISTS);
+                case 'fk_userrequests_bde':
+                    throw new UsersServiceError('The given bde UUID is invalid', UsersErrorType.BDE_NOT_EXISTS);
+                case 'fk_userrequests_specialties':
+                    throw new UsersServiceError('The given specialty do not exists', UsersErrorType.INVALID_SPECIALTY);
+                default:
+                    throw new UsersServiceError(`Unable to create the user.\n${e}`, UsersErrorType.INTERNAL);
+            }
+        }
     }
 
     async create(user: UnregisteredUser): Promise<UnregisteredUser> {
