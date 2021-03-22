@@ -153,7 +153,12 @@ const main = async () => {
   /* Define pg connection information */
   const pgCredentials = {
     connectionString: dbUrl,
-    ssl: process.env.NODE_ENV === "production",
+    ssl:
+      process.env.NODE_ENV === "production"
+        ? {
+            rejectUnauthorized: false,
+          }
+        : false,
   };
 
   /* Apply migrations to database */
