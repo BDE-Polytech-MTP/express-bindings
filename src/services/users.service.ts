@@ -1,6 +1,8 @@
 import { UsersService, User, UnregisteredUser, UsersServiceError, UsersErrorType, permissionsFromStrings } from '@bde-polytech-mtp/base-backend';
 import { UserRequest } from '@bde-polytech-mtp/base-backend/dist/models/user-request.model';
 import { Pool, QueryResult } from 'pg';
+import { transaction } from '../db-utils';
+import { v4 as uuid } from 'uuid';
 
 interface UserRow {
     user_uuid: string;
@@ -80,6 +82,44 @@ export class PostgresUsersService implements UsersService {
         } catch (e) {
             console.error(e);
             throw new UsersServiceError(`Unable to fetch user requests.\n${e}.`, UsersErrorType.INTERNAL);
+        }
+    }
+
+    async processUserRequest(email: string, bdeUUID: string, accepted: boolean): Promise<UnregisteredUser | null> {
+        let request: UserRequest | null = null;
+        try {
+            const { rows }: { rows: UserRequestRow[] } = await this.db.query('SELECT * FROM user_requests WHERE email = $1 AND bde_uuid = $2 AND refused=false', [email, bdeUUID]);
+            if (rows.length) {
+                request = this.mapUserRequestRowToUserRequest(rows[0]);
+            }
+        } catch (e) {
+            throw new UsersServiceError('Unable to process the request', UsersErrorType.INTERNAL);
+
+        }
+        
+        if (!request) {
+            throw new UsersServiceError('Unable to find the given user', UsersErrorType.USER_NOT_EXISTS);
+        }
+
+        if (accepted) {
+            const unregisteredUser: UnregisteredUser = {
+                ...request,
+                member: false,
+                permissions: [],
+                userUUID: uuid(),
+            };
+            await transaction(this.db, async (c) =>{
+                await this.create(unregisteredUser);
+                await c.query('DELETE FROM user_requests WHERE email = $1', [email]);
+            });
+            return unregisteredUser;
+        } else {
+            try {
+                await this.db.query('UPDATE user_requests SET refused=true WHERE email = $1', [email]);
+                return null;
+            } catch (e) {
+                throw new UsersServiceError('Unable to refuse request', UsersErrorType.INTERNAL);
+            }
         }
     }
 
