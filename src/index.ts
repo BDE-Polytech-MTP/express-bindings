@@ -60,6 +60,11 @@ const createUsersRouter = (
   usersRouter.post("/requests", (req, res) =>
     usersController.register(req.body).then(forwardTo(res))
   );
+  usersRouter.get("/requests/:uuid", (req, res) =>
+    usersController
+      .listAccountsRequestForBde(req.params.uuid, req.headers.authorization)
+      .then(forwardTo(res))
+  );
   usersRouter.post("/unregistered", (req, res) =>
     usersController
       .create(req.body, req.headers.authorization)

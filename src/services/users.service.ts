@@ -15,6 +15,15 @@ interface UserRow {
     member: boolean;
 }
 
+interface UserRequestRow {
+    email: string;
+    firstname: string;
+    lastname: string;
+    bde_uuid: string;
+    specialty_name: string;
+    specialty_year: number;
+}
+
 export class PostgresUsersService implements UsersService {
 
     constructor(private db: Pool) {}
@@ -51,6 +60,27 @@ export class PostgresUsersService implements UsersService {
             return this.mapUserRowToRegisteredUser(row);
         }
         return this.mapUserRowToUnregisteredUser(row);
+    }
+
+    private mapUserRequestRowToUserRequest(row: UserRequestRow): UserRequest {
+        return {
+            bdeUUID: row.bde_uuid,
+            email: row.email,
+            firstname: row.firstname,
+            lastname: row.lastname,
+            specialtyName: row.specialty_name,
+            specialtyYear: row.specialty_year,
+        };
+    }
+
+    async findAllRequest(bdeUUID: string): Promise<UserRequest[]> {
+        try {
+            const { rows }: { rows: UserRequestRow[] } = await this.db.query('SELECT * FROM user_requests WHERE bde_uuid = $1 AND refused=false', [bdeUUID])
+            return rows.map(row => this.mapUserRequestRowToUserRequest(row));
+        } catch (e) {
+            console.error(e);
+            throw new UsersServiceError(`Unable to fetch user requests.\n${e}.`, UsersErrorType.INTERNAL);
+        }
     }
 
     async register(user: UserRequest): Promise<UserRequest> {
