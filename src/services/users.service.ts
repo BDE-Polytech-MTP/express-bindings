@@ -1,6 +1,6 @@
 import { UsersService, User, UnregisteredUser, UsersServiceError, UsersErrorType, permissionsFromStrings } from '@bde-polytech-mtp/base-backend';
 import { UserRequest } from '@bde-polytech-mtp/base-backend/dist/models/user-request.model';
-import { Pool } from 'pg';
+import { Pool, QueryResult } from 'pg';
 
 interface UserRow {
     user_uuid: string;
@@ -54,14 +54,20 @@ export class PostgresUsersService implements UsersService {
     }
 
     async register(user: UserRequest): Promise<UserRequest> {
+        let result: QueryResult<any>;
         try {
-            const result = await this.db.query('SELECT COUNT(*) FROM users WHERE email=$1', [user.email]);
-            if (result) {
-                console.log(result);
-                return user;
-            }
+            result = await this.db.query('SELECT COUNT(*) FROM users WHERE email=$1', [user.email]);
+        } catch (e) {
+            throw new UsersServiceError(`Unable to process the request.\n${e}`, UsersErrorType.INTERNAL);
+        }
+
+        if (result && result.rows && result.rows.length && result.rows[0].count !== '0') {
+            throw new UsersServiceError('The given email is already used', UsersErrorType.USER_ALREADY_EXISTS);
+        }
+
+        try {
             await this.db.query(
-                'INSERT INTO user_requests (email, firstname, lastname, bde_uuid, specialty_name, specialty_year) VALUES ($1, $2 $3, $4, $5, $6)',
+                'INSERT INTO user_requests (email, firstname, lastname, bde_uuid, specialty_name, specialty_year) VALUES ($1, $2, $3, $4, $5, $6)',
                 [user.email, user.firstname, user.lastname, user.bdeUUID, user.specialtyName, user.specialtyYear]
             );
             return user;
@@ -74,7 +80,8 @@ export class PostgresUsersService implements UsersService {
                 case 'fk_userrequests_specialties':
                     throw new UsersServiceError('The given specialty do not exists', UsersErrorType.INVALID_SPECIALTY);
                 default:
-                    throw new UsersServiceError(`Unable to create the user.\n${e}`, UsersErrorType.INTERNAL);
+                    console.error(e);
+                    throw new UsersServiceError(`Unable to process the request.\n${e}`, UsersErrorType.INTERNAL);
             }
         }
     }

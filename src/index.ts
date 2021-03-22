@@ -57,7 +57,7 @@ const createUsersRouter = (
   bookingsController: BookingsController
 ) => {
   const usersRouter = Router();
-  usersRouter.post("/user-requests", (req, res) =>
+  usersRouter.post("/requests", (req, res) =>
     usersController.register(req.body).then(forwardTo(res))
   );
   usersRouter.post("/unregistered", (req, res) =>
