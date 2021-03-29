@@ -107,6 +107,7 @@ export class PostgresUsersService implements UsersService {
                 member: false,
                 permissions: [],
                 userUUID: uuid(),
+                email: request.email.toLowerCase(),
             };
             await transaction(this.db, async (c) =>{
                 await this.create(unregisteredUser);
@@ -124,6 +125,10 @@ export class PostgresUsersService implements UsersService {
     }
 
     async register(user: UserRequest): Promise<UserRequest> {
+        user = {
+            ...user,
+            email: user.email.toLowerCase(),
+        };
         let result: QueryResult<any>;
         try {
             result = await this.db.query('SELECT COUNT(*) FROM users WHERE email=$1', [user.email]);
