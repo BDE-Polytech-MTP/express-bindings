@@ -10,6 +10,7 @@ import {
   AuthenticationService,
   DEFAULT_HASH_STRATEGY,
   Response,
+  VotesController,
 } from "@bde-polytech-mtp/base-backend";
 import { PostgresBDEService } from "./services/bde.service";
 import { PostgresUsersService } from "./services/users.service";
@@ -21,6 +22,7 @@ import marv from "marv/api/promise";
 import marvPgDriver from "marv-pg-driver";
 import path from "path";
 import { PostgresBookingsService } from "./services/bookings.service";
+import { PostgresVotesService } from "./services/votes.service";
 
 const port = process.env.PORT || 3000;
 const dbUrl =
@@ -221,6 +223,7 @@ const main = async () => {
     usersService,
     DEFAULT_HASH_STRATEGY
   );
+  const votesService = new PostgresVotesService(db);
 
   /* Create controllers */
   const bdeController = new BDEController(
@@ -245,6 +248,7 @@ const main = async () => {
     authService,
     loggingService
   );
+  const votesController = new VotesController(authService, votesService);
 
   /* Create Express app, add middlewares and mount controllers */
   const app = express();
@@ -262,6 +266,14 @@ const main = async () => {
   );
   app.post("/register", (req, res) =>
     usersController.finishUserRegistration(req.body).then(forwardTo(res))
+  );
+  app.post("/vote", (req, res) =>
+    votesController
+      .vote(req.body, req.headers.authorization)
+      .then(forwardTo(res))
+  );
+  app.get("/vote", (req, res) =>
+    votesController.getVote(req.headers.authorization).then(forwardTo(res))
   );
 
   /* Start application */
